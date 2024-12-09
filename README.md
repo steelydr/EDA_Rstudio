@@ -2,4 +2,4 @@ This project demonstrates EDA techniques using R Studio, focusing on understandi
 
 It includes data cleaning, summarization, and visualization to identify patterns and insights.
 
-Key libraries like ggplot2, dplyr, and tidyr are used for data manipulation and plotting. The workflow includes handling missing values, outlier detection, and generating meaningful plots. Follow the provided R script for step-by-step instructions. Insights derived from EDA will guide further analysis or modeling efforts.
+Key libraries like ggplot2, dplyr, and tidyr are used for data manipulation and plotting. The workflow includes handling missing values, outlier detection, and generating meaningful plots. 
