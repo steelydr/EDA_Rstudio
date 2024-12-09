@@ -2,7 +2,6 @@
 title: "Sentiment analysis"
 ---
 
-# Load required packages
 
 ```{r}
 library(tidyverse)
@@ -11,10 +10,6 @@ library(wordcloud)
 library(reshape2)
 ```
 
-# Load a data set
-
-- Use `tweets_distance_learning_US.csv` 
-
 ```{r}
 # Load the dataset
 df <- read_csv("tweets_distance_learning_US.csv")
@@ -22,10 +17,6 @@ df <- read_csv("tweets_distance_learning_US.csv")
 # Display the dataset
 df
 ```
-
-# Create a tidytext format of data 
-
-- Show the first six rows of the data in tidytext format (1 point)
 
 ```{r}
 colnames(df)
@@ -45,23 +36,6 @@ tidy_df <- df %>%
 head(tidy_df, 6)
 ```
 
-- Explain what each column in the tidytext format data (1 point)
-
-The tidy_df dataframe has 2 columns:
-
-id: A numeric identifier/index for each token
-word: The actual text token/word that was extracted from the Content (e.g., "register", "to", "watch", "a", "free", "webinar")
-
-This follows the tidy text format where each row represents a single token (word) and has a corresponding identifier. The tidytext format transforms text into a structured data frame where each row contains one token per row.
-
-# Load stop words 
-
-- Explain what each column in the loaded stop words (1 point)
-
-"word" - This column contains common stop words in English (like "a", "as", "able", "about", "above", "according")
-
-"lexicon" - This column appears to contain the categorization "SMART" for all the words shown, which likely indicates these stop words are from the SMART (Salton Modern American Reference Text) lexicon, a commonly used stop word list in text analysis
-
 ```{r}
 # Load stop words
 data("stop_words")
@@ -70,10 +44,6 @@ data("stop_words")
 head(stop_words)
 ```
 
-
-- Remove stop words in the tidytext format data (1 point)
-  - How many rows in the tidy-text-formatted tweets before removing stop words?
-  - How many rows in the tidy-text-formatted tweets after removing stop words?
 
 ```{r}
 # Remove stop words
@@ -92,10 +62,6 @@ cat("Rows before removing stopwords:", rows_before, "\n")
 cat("Rows after removing stopwords:", rows_after, "\n")
 ```
 
-# Count frequent words (1 point)
-
-- Count frequency of words that are not stop words
-- Sort the rows in decreasing frequency value
 
 ```{r}
 # Count word frequency
@@ -107,11 +73,6 @@ head(word_count, 10)
 
 ```
 
-# Create a bar plot of frequent words (2 point)
-
-- Create a bar plot showing words used more than 500 times in the tweets after removing stopwords
-  - You need to create a bar plot similar to Figure 1.2 in the tidy text mining book
-  
 ```{r}
 tidy_df_no_stopwords %>%
   count(word, sort = TRUE) %>%
@@ -130,12 +91,7 @@ tidy_df_no_stopwords %>%
   labs(x = "n")
 ```
 
-# Compute sentiment score (3 point)
 
-- Use `bing` lexicon
-- Create a new column named **sentiment** in the tidy-text-formatted tweets without stopwords
-  - `sentiment` = frequency of `positive` words - frequency of `negative` words in each tweet
-  
 ```{r}
 # Use `bing` lexicon
 sentiment <- get_sentiments("bing")
@@ -158,11 +114,7 @@ tidy_sentiment <- tidy_df_no_stopwords %>%
 head(tidy_sentiment)
 ```
 
-# Visualize sentiment in tweets (1 point)
 
-- Create a bar plot: 
-  - X axis: Tweet id
-  - Y axis: Sentiment score
 
 ```{r}
 # Create a bar plot for sentiment scores
@@ -173,9 +125,6 @@ tidy_sentiment %>%
 
 ```
 
-# Compute mean of sentiment in the tweets (1 point)
-
-- Explain what the mean value of sentiment in tweets says (1 point)
 
 ```{r}
 # Compute mean sentiment
@@ -187,12 +136,7 @@ cat("Mean sentiment value:", mean_sentiment, "\n")
 
 ```
 
-# Identify most common positive and negative words
 
-## Create a tible with three columns (word, sentiment, n) from tidy-formatted tweets without stopwords (1 point)
-
-- Use `bing` lexicon in counting positive and negative words
-- Sort the words in the decreasing word frequency
 ```{r}
 # Positive sentiment
 positive_words <- tidy_df_no_stopwords %>%
@@ -224,12 +168,6 @@ common_words <- tidy_df_no_stopwords %>%
 head(common_words, 10)
 ```
 
-## Create two bar plots showing top 10 frequent positive and negative words identified in the previous step (2 point)
-
-- Do not create two separate plots.
-- Instead create one plot showing two sub-plots.
-- Use "Contribution to sentiment" for X axis label
-- Do not use Y axis label
 
 ```{r}
 tidy_df_no_stopwords %>%
@@ -262,7 +200,7 @@ tidy_df_no_stopwords %>%
          y = NULL)
 ```
 
-## Create word clouds showing frequent positive and negative words in the tweet (3 point)
+
 
 ```{r}
 df_word_cloud <- tidy_df_no_stopwords %>%

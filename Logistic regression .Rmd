@@ -2,23 +2,12 @@
 title: "Logistic regression"
 ---
 
-# Load libraries
-
-Import libraries to be used
-
 ```{r}
 library(tidyverse)
 library(caret)
 library(pROC)
 ```
 
-# Load a data set (1 point)
-
-Load a CSV file (CA_school_pass.csv) for analysis
-
-- Examine the loaded CSV file
-  - How many rows and columns does it have?
-  - What are column names and types?
   
 ```{r}
 # Load the data
@@ -35,23 +24,13 @@ cat("Number of columns:", ncol(ca_school), "\n")
 str(ca_school)
 ```
 
-# Modify column types for logistic regression (1 point)
-
-Columns are explained in https://rdrr.io/cran/Ecdat/man/Caschool.html 
-
-- `pass` is our outcome variable: Yes means students pass the test
 
 ```{r}
 ca_school <- ca_school %>%
   mutate(pass = factor(pass, levels = c("No", "Yes")))
 ```
 
-# Create training and test sets (1 point)
 
-- Create a training set by randomly selecting 80% of rows and all columns
-- Create a test set by randomly selecting 20% of rows and all columns
-- Use a random seed (23) to ensure reproducibility
-- Check number of observations in the training annd test sets
 
 ```{r}
 set.seed(23)
@@ -64,26 +43,19 @@ train_set <- ca_school[split_index, ]
 test_set <- ca_school[-split_index, ]
 ```
 
-## Examine number of rows in training/test sets (1 point)
+
 
 ```{r}
 cat("Number of rows in training set:", nrow(train_set), "\n")
 cat("Number of rows in test set:", nrow(test_set), "\n")
 ```
 
-# Modeling
-
-## Model 1: Predict `pass` from `computer` (1 point)
 
 ```{r}
 model1 <- glm(pass ~ computer, data = train_set, family = "binomial")
 summary(model1)
 ```
 
-### Visualize model1's prediction (1 point)
-
-- X axis label: "Computer"
-- Y axis: "Probability of Pass"
 
 ```{r}
 ggplot(train_set, aes(x = computer, y = as.numeric(pass) - 1)) +
@@ -93,23 +65,13 @@ ggplot(train_set, aes(x = computer, y = as.numeric(pass) - 1)) +
   theme_minimal()
 ```
 
-### Interpret model 1 (1 point)
 
-- Explain the relationship between `computer` and `pass` using this curve and estimated coefficient
-The logistic regression curve shows a positive relationship between the number of computers and the probability of passing. As the number of computers increases, the probability of passing also increases. The estimated coefficient for `computer` is positive (0.0078), indicating that for each additional computer, the log odds of passing increase by 0.0078. This suggests that schools with more computers tend to have a higher pass rate, although the effect is relatively small.
-
-### Predict from Model 1 (1 point)
-
-- Show first six predictions
 
 ```{r}
 predictions_model1 <- predict(model1, newdata = test_set, type = "response")
 head(predictions_model1)
 ```
 
-### Create a confusion matrix for model1 prediction (1 point)
-
-- Report the accuracy from the confusion matrix
 
 ```{r}
 predicted_classes_model1 <- ifelse(predictions_model1 > 0.5, "Yes", "No")
@@ -121,9 +83,6 @@ conf_matrix_model1
 cat("Accuracy of Model 1:", conf_matrix_model1$overall["Accuracy"], "\n")
 ```
 
-### Compute AUC for model 1 (1 point)
-
-- Report the computed ROC value
 
 ```{r}
 roc_model1 <- roc(test_set$pass, predictions_model1)
@@ -131,25 +90,19 @@ auc_model1 <- auc(roc_model1)
 cat("AUC for Model 1:", auc_model1, "\n")
 ```
 
-## Model 2: Predict `pass` from `teachers`, `mealpct`,`computer`, `avginc` (1 point)
 
 ```{r}
 model2 <- glm(pass ~ teachers + mealpct + computer + avginc, data = train_set, family = "binomial")
 summary(model2)
 ```
 
-### Predict from Model 2 (1 point)
 
-- Show first six predictions from the model 2
 
 ```{r}
 predictions_model2 <- predict(model2, newdata = test_set, type = "response")
 head(predictions_model2)
 ```
 
-### Create a confusion matrix for model2 prediction (1 point)
-
-- Report the accuracy from the confusion matrix
 
 ```{r}
 predicted_classes_model2 <- ifelse(predictions_model2 > 0.5, "Yes", "No")
@@ -161,17 +114,12 @@ conf_matrix_model2
 cat("Accuracy of Model 2:", conf_matrix_model2$overall["Accuracy"], "\n")
 ```
 
-### Compute AUC for model 2 (1 point)
-
-- Report the computed ROC value
-
 ```{r}
 roc_model2 <- roc(test_set$pass, predictions_model2)
 auc_model2 <- auc(roc_model2)
 cat("AUC for Model 2:", auc_model2, "\n")
 ```
 
-### Create an ROC curve for model 2 (1 point)
 
 ```{r}
 plot(roc_model2, main = "ROC Curve for Model 2")

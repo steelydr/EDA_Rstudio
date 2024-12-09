@@ -2,7 +2,6 @@
 title: "Clustering"
 ---
 
-# Load required packages
 
 ```{r}
 library(tidyverse)
@@ -10,12 +9,6 @@ library(cluster)
 library(factoextra)
 ```
 
-# Load a data set
-
-- Load `college_scorecard.csv`
-- Examine the loaded data set
-  - Column names
-  - Column types
 
 ```{r}
 college_data <- read_csv("college_scorecard.csv")
@@ -34,20 +27,7 @@ colnames(college_data)
 # Display column types
 sapply(college_data, class)
 ```
-# Select numerical variables for clustering (1 point) 
-
-Select the following numerical variables for clustering analysis:
-
-- cost: Average annual total cost of attendance
-- admrate: Admission rate (0 - 100%)
-- satavg: Average SAT scores
-- avgfacsal: Average faculty salary
-- pctpell: Percentage of undergraduate who receive a Pell Grant
-- comprate: Rate of first-time, full-time students at four-year institutions who complete their degree within six years
-- firstgen: Share of first-generation students
-- debt: Median debt of students after leaving school
-
-After selecting these variables, examine them to make sure you have them all correctly.
+ctly.
 
 ```{r}
 selected_vars <- college_data %>%
@@ -168,17 +148,8 @@ distance <- sqrt(sum((row1 - row2)^2))
 print(distance)
 
 ```
-# Scale variables
 
-## Examine ranges of numerical variables to be used in the clustering analysis (1 point)
 
-- Describe what you found from the compared ranges
-
-The variables have vastly different scales - cost ranges from $7,715 to $62,594, while pctpell (percentage of Pell Grant recipients) ranges from 0.0616 to 0.9451 (or 6.16% to 94.51%).
-
-Some variables like admrate (5.69% to 100%) and comprate (0.0484 to 0.9779) use percentage scales, while others like satavg (666 to 1504) and avgfacsal ($13,059 to $185,850) use completely different units of measurement. These different scales justify the need for standardization before clustering.
-
-## Scale variables (1 point)
 
 ```{r}
 scaled_data <- selected_vars %>%
@@ -227,20 +198,12 @@ scaled_data %>%
 # Scale variables
 nrow(selected_vars)
 ```
-## Examine ranges of the scaled numerical variables (1 point)
+
 
 ```{r}
 # Examine ranges of numerical variables
 summary(selected_vars)
 ```
-
-# Find an optimal number of clusters
-
-## Elbow method (1 point)
-
-- Report the number of clusters suggested by the Elbow method
-- Justify your decision
-- Make sure to ensure reproducibility
 
 ```{r}
 # Elbow Method
@@ -258,14 +221,7 @@ plot(k_values, wss_values,
 
 ```
 
-Looking at the elbow plot, I observe that K=4 appears to be the optimal number of clusters. This point represents the "elbow" where increasing K beyond 4 yields diminishing returns in reducing the total within-cluster sum of squares. 
 
-After K=4, the curve starts to level off significantly, suggesting that additional clusters don't provide substantial improvement in explaining the variance in the data.
-
-## Average Silhouette Method (1 point)
-
-- Report the number of clusters suggested by Average Silhouette Method
-- Justify your decision
 ```{r}
 # Average Within Cluster of sum of squared
 fviz_nbclust(scaled_data, kmeans, method = "wss")
@@ -276,16 +232,6 @@ fviz_nbclust(scaled_data, kmeans, method = "wss")
 fviz_nbclust(scaled_data, kmeans, method = "silhouette")
 ```
 
-The optimal number of clusters is 2, as the silhouette width is highest at this point.
-At 𝑘= 2 k=2, the silhouette width peaks, suggesting that the data is best partitioned into 2 clusters.
-Beyond 2 clusters, the silhouette width decreases, indicating that further splitting may lead to less distinct and less cohesive clustering.
-
-
-## Gap Statistic Method (1 point)
-
-- Report the number of clusters suggested by Gap Statistic Method
-- Justify your decision
-- Make sure to ensure reproducibility
 
 ```{r}
 # Gap Statistic Method
@@ -294,12 +240,6 @@ gap_stat <- clusGap(scaled_data,FUN = kmeans,nstart = 25,K.max = 10,B = 50)
 fviz_gap_stat(gap_stat)
 
 ```
-
-Based on the gap statistic plot, the optimal number of clusters appears to be 9, as indicated by the vertical dashed line. This point shows where the gap statistic value starts to level off, showing diminishing returns in adding more clusters. 
-
-The error bars (standard error intervals) also remain relatively stable around this point, suggesting that 9 clusters provides a reliable clustering solution.
-
-## Create an optimal number of clusters based on the elbow method result (1 point)
 
 ```{r}
 # Create optimal clusters (assuming k=4 from elbow method)
@@ -310,7 +250,7 @@ final_clusters <- kmeans(scaled_data, centers = 4, nstart = 25)
 ```{r}
 final_clusters
 ```
-## Visualize clusters (1 point)
+
 
 ```{r}
 # Visualize clusters
@@ -321,7 +261,6 @@ fviz_cluster(final_clusters, data = scaled_data,
              ggtheme = theme_minimal())
 ```
 
-## Compute mean values of selected variables (cost, admrate, satavg) on each cluster (2 point)
 
 ```{r}
 # Compute mean values for each cluster
@@ -343,17 +282,10 @@ cluster_means <- bind_cols(
 
 ```
 
-## Describe how each cluter is similar or different in terms of three variables used in clustering (1 point)
-
 ```{r}
 # View cluster means
 print(cluster_means)
 ```
-Cluster 4 represents elite institutions with the highest average cost ($55,337), lowest admission rates (28.1%), and highest SAT scores (1,362), distinguishing them as highly selective and expensive schools.
-
-Cluster 1 represents mid-tier private institutions with moderately high costs ($40,627), moderate admission rates (66.4%), and above-average SAT scores (1,146), placing them between elite and typical schools.
-
-Clusters 2 and 3 are more accessible, with Cluster 2 having moderate costs ($29,435) and higher admission rates (71.3%) with average SAT scores (1,031), while Cluster 3 has the lowest costs ($23,449), moderate admission rates (62.4%), and lowest SAT scores (951).
 
 ```{r}
 final_clusters$cluster
