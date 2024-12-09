@@ -1,0 +1,226 @@
+---
+title: "Random forest"
+---
+
+# Load required packages
+
+```{r}
+library(tidyverse)
+library(rsample)
+library(ranger)
+```
+
+# Load a data set (1 point)
+
+- Load `study_performance_simple.csv` for this assignment
+- Examine the loaded data set
+  - How many rows and colums are tehre?
+  - What are column names and types?
+
+```{r}
+study_data <- read_csv("study_performance_simple.csv")
+```
+
+```{r}
+# Examine the data
+glimpse(study_data)
+```
+```{r}
+
+str(train_data)
+
+names(train_data)
+```
+
+```{r}
+# Get dimensions
+cat("Dimensions:", dim(study_data)[1], "rows and", dim(study_data)[2], "columns\n")
+```
+# Create training and test sets (1 point)
+
+- Use a random seed (42)
+- Training set: 70% of original data set
+- Test set: 30% of original data set
+- Examine number of rows (observations) in the training and test sets
+- You can use what you learned in the previous model or use a new approach used in this module
+
+```{r}
+# Set seed for reproducibility
+set.seed(42)
+
+# Create initial split
+data_split <- initial_split(study_data, prop = 0.7)
+
+# Create training and testing sets
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+# Check dimensions
+cat("Training set dimensions:", dim(train_data)[1], "rows\n")
+cat("Testing set dimensions:", dim(test_data)[1], "rows\n")
+```
+
+# Build a random forest model
+
+## Parameter tuning
+
+### Create a hyperparameter grid (1 point)
+
+Create a grid covering the following three hyper-parameters: 
+
+- `mtry`: 2, 3, 4, 5
+- `sample_size` 0.2, 0.4, 0.6, 0.8
+- `num.trees`: 100, 200, 300, 400, 500
+- How many cases (i.e., different combination of three parameters) are you going to examine?
+
+```{r}
+# Create grid of parameters
+param_grid <- expand_grid(
+  mtry = c(2, 3, 4, 5),
+  sample_fraction = c(0.2, 0.4, 0.6, 0.8),
+  num.trees = c(100, 200, 300, 400, 500),
+  OOB_RMSE = 0
+)
+
+# Calculate total number of combinations
+cat("Total number of parameter combinations:", nrow(param_grid))
+```
+```{r}
+param_grid
+```
+```{r}
+param_grid$mtry
+```
+
+
+### Identify best hyperparameter values (2 points)
+
+- Use a random seed (42) to ensure reproducibility
+- Sort the result in the increasing order of prediction error computed during model fitting
+- Show the first top 10 rows (combination of three parameter values)
+- Report the best parameter values
+
+```{r}
+
+set.seed(42)
+
+# Calculate OOB error for each parameter combination
+for(i in 1:nrow(param_grid)) {
+  model <- ranger(
+    formula = math_score ~ gender + race_ethnicity + parental_level_of_education + 
+              lunch + test_preparation_course,
+    data = train_data,
+    num.trees = param_grid$num.trees[i],
+    mtry = param_grid$mtry[i],
+    sample.fraction = param_grid$sample_fraction[i],
+    importance = 'impurity'
+  )
+  param_grid$OOB_RMSE[i] <- sqrt(model$prediction.error)
+}
+
+# Sort results by OOB_RMSE
+param_grid <- arrange(param_grid, OOB_RMSE)
+
+# Show top 10 combinations
+print("Top 10 parameter combinations:")
+head(param_grid, 10)
+```
+
+
+```{r}
+# Get best parameters
+best_params <- param_grid %>% slice(1)
+cat("\nBest parameters:\n")
+cat("mtry:", best_params$mtry, "\n")
+cat("sample_fraction:", best_params$sample_fraction, "\n")
+cat("num.trees:", best_params$num.trees, "\n")
+cat("OOB_RMSE:", best_params$OOB_RMSE, "\n")
+```
+
+### Build an optimal random forest (1 point)
+
+- Use the best parameter values obtained in the previous step
+
+```{r}
+# Train final model with best parameters
+optimal_rf <- ranger(
+  formula = math_score ~ gender + race_ethnicity + parental_level_of_education + 
+            lunch + test_preparation_course,
+  data = train_data,
+  num.trees = best_params$num.trees,
+  mtry = best_params$mtry,
+  sample.fraction = best_params$sample_fraction,
+  importance = 'impurity'
+)
+
+print(optimal_rf)
+```
+
+### Visualize importance of 5 variables (1 point)
+
+- Make sure to sort the predictor in the decsencing order or variable importance
+
+```{r}
+importance_df <- tibble(
+  variable = names(importance(optimal_rf)),
+  importance = importance(optimal_rf)
+) %>%
+  arrange(desc(importance)) %>%
+  slice_head(n = 5)
+
+ggplot(importance_df, aes(x = reorder(variable, importance), y = importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(
+    x = "Variables",
+    y = "Importance",
+    title = "Top 5 Most Important Variables in Predicting Math Score"
+  )
+```
+
+
+## Predict from an optimal tree (1 point)
+
+- Show the first 6 predictions
+
+```{r}
+# Make predictions on test set
+predictions <- predict(optimal_rf, data = test_data)
+
+# Show first 6 predictions
+cat("First 6 predictions:\n")
+head(predictions$predictions)
+```
+
+### Visualize predicted values (1 point)
+
+- Create a scatter plot showing true score in the X axis and predicted score in the Y axis
+- Show a best fit line (not a curve) in the scatter plot
+
+```{r}
+pred_df <- tibble(
+  true_score = test_data$math_score,
+  predicted_score = predictions$predictions
+)
+
+ggplot(pred_df, aes(x = true_score, y = predicted_score)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  theme_minimal() +
+  labs(
+    x = "True Math Score",
+    y = "Predicted Math Score",
+    title = "True vs Predicted Math Scores"
+  ) +
+  coord_fixed(ratio = 1)  
+```
+
+### Compute RMSE from predicted values (1 point)
+
+```{r}
+rmse <- sqrt(mean((pred_df$true_score - pred_df$predicted_score)^2))
+cat("Root Mean Square Error (RMSE):", round(rmse, 2))
+```
+
+

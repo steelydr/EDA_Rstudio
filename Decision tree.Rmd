@@ -1,0 +1,326 @@
+---
+title: "Decision tree"
+---
+
+
+# Load required libraries
+
+```{r}
+library(tidyverse)
+library(rpart)
+library(caret)
+library(ISLR2)
+library(rpart.plot)
+```
+
+# Load a data set
+
+- Load `study_performance_simple.csv` for this assignment.
+
+```{r}
+data <- read.csv("C:\\study_performance_simple.csv")
+```
+
+# Regression tree
+
+## Create training / test sets (1 point)
+
+- Create a training set by randomly selecting 80% of rows and all columns
+- Create a test set by randomly selecting 20% of rows and all columns
+- Use a random seed (123) to ensure reproducibility
+- Check number of observations in the training annd test sets
+
+```{r}
+set.seed(123)
+sample_index <- sample(c(TRUE, FALSE), nrow(data), replace = TRUE, prob = c(0.8, 0.2))
+
+train_data <- data[sample_index, ]
+test_data <- data[!sample_index, ] 
+
+cat("Training set observations:", nrow(train_data), "\n")
+cat("Test set observations:", nrow(test_data), "\n")
+
+```
+
+## Build a regression tree (1 point)
+
+- Build a regression tree that predicts `math_score` from other variables (`gender`, `race_ethnicity`, `parental_level_of_education`, `lunch`, `test_preparation_course`)
+- Use `cp = 0.008` in building a tree
+
+```{r}
+reg_tree <- rpart(math_score ~ gender + race_ethnicity + parental_level_of_education + lunch + test_preparation_course,
+                  data = train_data, method = "anova", cp = 0.008)
+```
+
+## Visualize a regression tree (1 point)
+
+```{r}
+rpart.plot(reg_tree)
+```
+
+## Interpret the tree (1 point)
+
+- Select one node (not a root node) and explain how to make a prediction at that node
+Answer : Leaf Nodes are meant to be final predictions and whereas non-leaf nodes represent decision points where the data is split based on certain conditions, but they don't give final predictions.
+
+We take node 53 where it takes 13% of the data where parent level education is high school or some high school and lunch is free or reduced.
+Where test preparation for course = none takes 8% of the parent node.
+Where test preparation for course != none takes 4% of the parent node.
+
+
+## Predict from a regression tree (1 point)
+
+- Show the first six predictions made by the tree
+
+```{r}
+tree_predictions <- predict(reg_tree, newdata = test_data)
+head(tree_predictions, 6)
+```
+## Compute RMSE (root mean squared error) of decision tree (1 point)
+```{r}
+results <- tibble(
+  actual = test_data$math_score,
+  predicted = tree_predictions
+)
+results
+```
+
+```{r}
+rmse <- sqrt(mean((results$actual - results$predicted)^2))
+
+cat("RMSE of the decision tree model:", rmse, "\n")
+```
+
+## Build a multiple regression model (1 point)
+
+```{r}
+
+multi_reg_model <- rpart(math_score ~ gender + race_ethnicity + parental_level_of_education + lunch + test_preparation_course,
+                         data = train_data, method = "anova", cp = 0)
+
+```
+
+## Predict from a multiple regression model (1 point)
+
+- Show the first size prediction values
+
+```{r}
+rpart.plot(multi_reg_model)
+```
+
+## Compute RMSE of multiple regression model (1 point)
+
+- Compare decision tree's RMSE to multiple regression models RMSE
+  - Which model is better?
+  
+```{r}
+
+multi_reg_predictions <- predict(multi_reg_model, newdata = test_data)
+
+head(multi_reg_predictions, 6)
+```
+
+```{r}
+multi_reg_results <- tibble(
+  actual = test_data$math_score,
+  predicted = multi_reg_predictions
+)
+multi_reg_rmse <- sqrt(mean((multi_reg_results$actual - multi_reg_results$predicted)^2))
+
+cat("RMSE of the multiple regression model:", multi_reg_rmse, "\n")
+```
+Answer : The decision tree model is better because it has a lower RMSE (13.49253) compared to the multiple regression model (14.39542).A lower RMSE indicates better predictive accuracy, as it measures the average deviation of predictions from actual values.
+The decision tree model's predictions are, on average, closer to the true values than those of the multiple regression model.
+
+# Classification tree
+
+## Modify data sets for classification test (1 point)
+
+- Create a new column named `pass` in the original data set (`study_performance_simple.csv`)
+  - `pass` will have a value `Yes` if `math_score` > 65
+  - Otherwise, `pass` will have a value `No`
+- After creating `pass` column, remove `math_score` column from the data set
+- Examine a new data set containing a new column and not containing `math_score`
+  
+```{r}
+data_class <- data %>%
+  mutate(pass = ifelse(math_score > 65, "Yes", "No")) %>%
+  select(-math_score)
+
+head(data_class)
+```
+
+## Create training / test sets that includes this new `pass` variable (1 point)
+
+- Create a training set by randomly selecting 80% of rows and all columns
+- Create a test set by randomly selecting 20% of rows and all columns
+- Use a random seed (123) to ensure reproducibility
+- Check number of observations in the training annd test sets
+
+```{r}
+set.seed(123)
+sample_index <- sample(c(TRUE, FALSE), nrow(data_class), replace = TRUE, prob = c(0.8, 0.2))
+train_data_class <- data_class[sample_index, ]
+test_data_class <- data_class[!sample_index, ]
+
+cat("Training set observations:", nrow(train_data_class), "\n")
+cat("Test set observations:", nrow(test_data_class), "\n")
+
+```
+
+## Build a classification tree (1 point)
+
+- Predict `pass` from other variables
+- Use `cp = 0.008` in building a classification tree
+
+```{r}
+class_tree <- rpart(pass ~ gender + race_ethnicity + parental_level_of_education + lunch + test_preparation_course,
+                    data = train_data_class, method = "class", cp = 0.008)
+```
+
+## Visualize a classification tree (1 point)
+
+```{r}
+rpart.plot(class_tree)
+```
+
+## Interpret the classification tree (1 point)
+
+- Choose one node that is **not** a root node, explain how to make a prediction at that node
+Answer : Leaf Nodes are meant to be final predictions and whereas non-leaf nodes represent decision points where the data is split based on certain conditions, but they don't give final predictions.
+
+We take node represents No with 0.32 probability which means this node represents observations where the course was not taken, and it predicts "No" with a 32% probability and where it takes 35% of the data where lunch is free or reduced.
+Where test preparation for course = none takes 22% of the parent node.
+Where test preparation for course != none takes 13% of the parent node.
+
+## Predict from a classification tree (1 point)
+
+- Show first 6 predictions from the model
+
+```{r}
+class_predictions <- predict(class_tree, newdata = test_data_class, type = "class")
+head(class_predictions, 6)
+```
+
+## Build a confusion matrix from prediction (1 point)
+
+```{r}
+
+class_predictions_tibble <- tibble(
+  truth = factor(test_data_class$pass),
+  pred = factor(class_predictions, levels = levels(factor(test_data_class$pass)))
+)
+
+class_predictions_tibble
+```
+
+```{r}
+conf_matrix <- confusionMatrix(data = class_predictions_tibble$pred, reference = class_predictions_tibble$truth)
+conf_matrix
+```
+
+Report the following metrics:
+
+- What is the accuracy?
+```{r}
+cat("Accuracy:", conf_matrix$overall['Accuracy'], "\n")
+
+```
+Answer : 0.6313131 
+
+- What is false positive rate?
+```{r}
+FPR <- conf_matrix$byClass['Specificity']
+cat("False Positive Rate (FPR):", 1 - FPR, "\n")
+
+```
+Answer: FPR <- FP / (FP + TN)
+FPR = 28/(28+77) = 0.2666
+
+
+- What is true positive rate?
+```{r}
+TPR <- conf_matrix$byClass['Sensitivity']
+cat("True Positive Rate (TPR):", TPR, "\n")
+
+```
+Answer :TPR <- TP / (TP + FN)
+TPR = 48/(48+45) = 0.5161
+
+## Build a logistic regression model (1 point)
+
+```{r}
+
+train_data_class <- train_data_class %>%
+  mutate(pass_binary = ifelse(pass == "Yes", 1, 0))
+
+test_data_class <- test_data_class %>%
+  mutate(pass_binary = ifelse(pass == "Yes", 1, 0))
+
+## Build a logistic regression model
+logistic_model <- glm(pass_binary ~ gender + race_ethnicity + parental_level_of_education + lunch + test_preparation_course,
+                      data = train_data_class, family = "binomial")
+
+summary(logistic_model)
+
+```
+
+## Predict from a logistic regression model (1 point)
+
+- Show first six predictions from the logistic regression model
+
+```{r}
+logistic_predictions_prob <- predict(logistic_model, newdata = test_data_class, type = "response")
+head(logistic_predictions_prob, 6)
+
+```
+
+### Create a confusion matrix for logistic regression model (1 point)
+
+- If predicted probability is greater than 0.5: `pass` = "Yes"
+- Otherwise: `pass` = "No"
+
+```{r}
+logistic_predictions_class <- ifelse(logistic_predictions_prob > 0.5, "Yes", "No")
+head(logistic_predictions_class, 6)
+```
+```{r}
+
+logistic_predictions_tibble <- tibble(
+  truth = factor(test_data_class$pass),
+  pred = factor(logistic_predictions_class, levels = levels(factor(test_data_class$pass)))
+)
+
+conf_matrix_logistic <- confusionMatrix(data = logistic_predictions_tibble$pred, reference = logistic_predictions_tibble$truth)
+conf_matrix_logistic
+
+```
+Report the following metrics:
+
+- What is the accuracy?
+Accuracy : 0.6616
+```{r}
+
+cat("Accuracy:", conf_matrix_logistic$overall['Accuracy'], "\n")
+
+```
+- What is false positive rate?
+```{r}
+
+FPR_logistic <- conf_matrix_logistic$byClass['Specificity']
+cat("False Positive Rate (FPR):", 1 - FPR_logistic, "\n")
+
+```
+Answer :TPR <- FP / (FP + TN)
+TPR = 35 / (35+70) = 0.3333
+
+- What is true positive rate?
+```{r}
+
+TPR_logistic <- conf_matrix_logistic$byClass['Sensitivity']
+cat("True Positive Rate (TPR):", TPR_logistic, "\n")
+
+```
+Answer :
+Answer :TPR <- TP / (TP + FN)
+TPR = 61/(61+32) = 0.6559
